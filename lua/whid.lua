@@ -1,10 +1,55 @@
 local api = vim.api
 local buf, win
 
+local function close_window()
+  api.nvim_win_close(win, true)
+end
+
+-- Our file list start at line 4, so we can prevent reaching above it
+-- from bottm the end of the buffer will limit movment
+local function move_cursor()
+  local new_pos = math.max(4, api.nvim_win_get_cursor(win)[1] - 1)
+  api.nvim_win_set_cursor(win, {new_pos, 0})
+end
+
+-- Open file under cursor
+local function open_file()
+  local str = api.nvim_get_current_line()
+  close_window()
+  api.nvim_command('edit '..str)
+end
+
 local function center(str)
   local width = api.nvim_win_get_width(0)
   local shift = math.floor(width / 2) - math.floor(string.len(str) / 2)
   return string.rep(' ', shift) .. str
+end
+
+local function set_mappings()
+  local mappings = {
+    ['['] = 'update_view(-1)',
+    [']'] = 'update_view(1)',
+    ['<cr>'] = 'open_file()',
+    h = 'update_view(-1)',
+    l = 'update_view(1)',
+    q = 'close_window()',
+    k = 'move_cursor()'
+  }
+
+  for k,v in pairs(mappings) do
+    api.nvim_buf_set_keymap(buf, 'n', k, ':lua require"whid".'..v..'<cr>', {
+        nowait = true, noremap = true, silent = true
+      })
+  end
+
+  local other_chars = {
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'i', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
+  }
+  for k,v in ipairs(other_chars) do
+    api.nvim_buf_set_keymap(buf, 'n', v, '', { nowait = true, noremap = true, silent = true })
+    api.nvim_buf_set_keymap(buf, 'n', v:upper(), '', { nowait = true, noremap = true, silent = true })
+    api.nvim_buf_set_keymap(buf, 'n',  '<c-'..v..'>', '', { nowait = true, noremap = true, silent = true })
+  end
 end
 
 -- open the window
@@ -71,7 +116,7 @@ local function update_view(direction)
   local result = vim.fn.systemlist('git diff-tree --no-commit-id --name-only -r  HEAD~'..position)
 
   api.nvim_buf_set_lines(buf, 0, -1, false, {
-        center('What have i done?'),
+        center('What Have I Done?'),
         center('HEAD~'..position),
         ''
       })
@@ -82,11 +127,24 @@ local function update_view(direction)
   end
 
   api.nvim_buf_set_lines(buf, 3, -1, false, result)
+  api.nvim_buf_add_highlight(buf, -1, 'WhidHeader', 0, 0, -1)
+  api.nvim_buf_add_highlight(buf, -1, 'whidSubHeader', 1, 0, -1)
+
+  api.nvim_buf_set_option(buf, 'modifiable', true)
+end
+
+local function whid()
+  position = 0 -- if you want to preserve last displayed state just omit this line
+  open_window()
+  set_mappings()
+  update_view(0)
+  api.nvim_win_set_cursor(win, {4, 0}) -- set cursor on first list entry
 end
 
 return {
-  whid = function()
-    open_window()
-    update_view(0)
-  end
+  whid = whid,
+  update_view = update_view,
+  open_file = open_file,
+  move_cursor = move_cursor,
+  close_window = close_window
 }
