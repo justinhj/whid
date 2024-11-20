@@ -53,6 +53,7 @@ local function open_window()
   -- and finally create it with buffer attached
   local border_win = api.nvim_open_win(border_buf, true, border_opts)
   win = api.nvim_open_win(buf, true, opts)
+
   api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
 
