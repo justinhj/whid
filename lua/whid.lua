@@ -1,6 +1,12 @@
 local api = vim.api
 local buf, win
 
+local function center(str)
+  local width = api.nvim_win_get_width(0)
+  local shift = math.floor(width / 2) - math.floor(string.len(str) / 2)
+  return string.rep(' ', shift) .. str
+end
+
 -- open the window
 local function open_window()
   buf = api.nvim_create_buf(false, true) -- create new emtpy buffer
@@ -53,8 +59,34 @@ local function open_window()
   -- and finally create it with buffer attached
   local border_win = api.nvim_open_win(border_buf, true, border_opts)
   win = api.nvim_open_win(buf, true, opts)
-
   api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
 
-open_window()
+local position = 0
+
+local function update_view(direction)
+  position = position + direction
+  if position < 0 then position = 0 end -- HEAD~0 is the newest state
+
+  local result = vim.fn.systemlist('git diff-tree --no-commit-id --name-only -r  HEAD~'..position)
+
+  api.nvim_buf_set_lines(buf, 0, -1, false, {
+        center('What have i done?'),
+        center('HEAD~'..position),
+        ''
+      })
+
+  -- with small indentation results will look better
+  for k,v in pairs(result) do
+    result[k] = '  '..result[k]
+  end
+
+  api.nvim_buf_set_lines(buf, 3, -1, false, result)
+end
+
+return {
+  whid = function()
+    open_window()
+    update_view(0)
+  end
+}
