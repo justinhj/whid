@@ -1,4 +1,3 @@
-" in plugin/whid.vim
 if exists('g:loaded_whid') | finish | endif " prevent loading file twice
 
 let s:save_cpo = &cpo " save user coptions

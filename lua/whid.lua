@@ -1,7 +1,7 @@
 local api = vim.api
 local buf, win
 
-
+-- open the window
 local function open_window()
   buf = api.nvim_create_buf(false, true) -- create new emtpy buffer
 
