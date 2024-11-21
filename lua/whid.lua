@@ -1,3 +1,5 @@
+local pp = require('plenary.popup')
+
 local api = vim.api
 local buf, win
 
@@ -54,10 +56,6 @@ end
 
 -- open the window
 local function open_window()
-  buf = api.nvim_create_buf(false, true) -- create new emtpy buffer
-
-  api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-
   -- get dimensions
   local width = api.nvim_get_option("columns")
   local height = api.nvim_get_option("lines")
@@ -70,41 +68,56 @@ local function open_window()
   local row = math.ceil((height - win_height) / 2 - 1)
   local col = math.ceil((width - win_width) / 2)
 
-  -- set some options
-  local opts = {
-    style = "minimal",
-    relative = "editor",
+  local config
+  win, config = pp.create("Whid", {
+    line = row,
+    col = col,
     width = win_width,
     height = win_height,
-    row = row,
-    col = col
-  }
+    border = {1,1,1,1},
+    padding = {},
+  })
 
-  local border_opts = {
-    style = "minimal",
-    relative = "editor",
-    width = win_width + 2,
-    height = win_height + 2,
-    row = row - 1,
-    col = col - 1
-  }
-  local border_buf = api.nvim_create_buf(false, true)
+  buf = vim.api.nvim_win_get_buf(win)
+  -- buf = api.nvim_create_buf(false, true) -- create new emtpy buffer
 
-  local border_lines = { '╔' .. string.rep('═', win_width) .. '╗' }
-  local middle_line = '║' .. string.rep(' ', win_width) .. '║'
-  for i=1, win_height do
-    table.insert(border_lines, middle_line)
-  end
-  table.insert(border_lines, '╚' .. string.rep('═', win_width) .. '╝')
+  api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 
-  api.nvim_buf_set_lines(border_buf, 0, -1, false, border_lines)
+  -- -- set some options
+  -- local opts = {
+  --   style = "minimal",
+  --   relative = "editor",
+  --   width = win_width,
+  --   height = win_height,
+  --   row = row,
+  --   col = col
+  -- }
 
-  -- set bufer's (border_buf) lines from first line (0) to last (-1)
-  -- ignoring out-of-bounds error (false) with lines (border_lines)
-  -- and finally create it with buffer attached
-  local border_win = api.nvim_open_win(border_buf, true, border_opts)
-  win = api.nvim_open_win(buf, true, opts)
-  api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
+  -- local border_opts = {
+  --   style = "minimal",
+  --   relative = "editor",
+  --   width = win_width + 2,
+  --   height = win_height + 2,
+  --   row = row - 1,
+  --   col = col - 1
+  -- }
+  -- local border_buf = api.nvim_create_buf(false, true)
+
+  -- local border_lines = { '╔' .. string.rep('═', win_width) .. '╗' }
+  -- local middle_line = '║' .. string.rep(' ', win_width) .. '║'
+  -- for i=1, win_height do
+  --   table.insert(border_lines, middle_line)
+  -- end
+  -- table.insert(border_lines, '╚' .. string.rep('═', win_width) .. '╝')
+
+  -- api.nvim_buf_set_lines(border_buf, 0, -1, false, border_lines)
+
+  -- -- set bufer's (border_buf) lines from first line (0) to last (-1)
+  -- -- ignoring out-of-bounds error (false) with lines (border_lines)
+  -- -- and finally create it with buffer attached
+  -- local border_win = api.nvim_open_win(border_buf, true, border_opts)
+  -- win = api.nvim_open_win(buf, true, opts)
+  -- api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
 
 local position = 0
@@ -134,7 +147,7 @@ local function update_view(direction)
 end
 
 local function whid()
-  position = 0 -- if you want to preserve last displayed state just omit this line
+  position = 0
   open_window()
   set_mappings()
   update_view(0)
