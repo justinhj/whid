@@ -68,18 +68,24 @@ local function open_window()
   local row = math.ceil((height - win_height) / 2 - 1)
   local col = math.ceil((width - win_width) / 2)
 
+  local borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }
+
+  buf = api.nvim_create_buf(false, true)
+
   local config
-  win, config = pp.create("Whid", {
+  win, config = pp.create(buf, {
+    title = "What have I done?",
     line = row,
     col = col,
     width = win_width,
-    height = win_height,
-    border = {1,1,1,1},
+    borderchars = borderchars,
+    winblend = 20,
     padding = {},
   })
+  -- Note the popup ignores height in create so change it here
+  pp.move(win, { height = win_height })
 
-  buf = vim.api.nvim_win_get_buf(win)
-  -- buf = api.nvim_create_buf(false, true) -- create new emtpy buffer
+  -- buf = vim.api.nvim_win_get_buf(win)
 
   api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 
@@ -129,8 +135,7 @@ local function update_view(direction)
   local result = vim.fn.systemlist('git diff-tree --no-commit-id --name-only -r  HEAD~'..position)
 
   api.nvim_buf_set_lines(buf, 0, -1, false, {
-        center('What Have I Done?'),
-        center('HEAD~'..position),
+        center('Changed files at HEAD~'..position),
         ''
       })
 
@@ -139,7 +144,7 @@ local function update_view(direction)
     result[k] = '  '..result[k]
   end
 
-  api.nvim_buf_set_lines(buf, 3, -1, false, result)
+  api.nvim_buf_set_lines(buf, 2, -1, false, result)
   api.nvim_buf_add_highlight(buf, -1, 'WhidHeader', 0, 0, -1)
   api.nvim_buf_add_highlight(buf, -1, 'whidSubHeader', 1, 0, -1)
 
@@ -151,7 +156,7 @@ local function whid()
   open_window()
   set_mappings()
   update_view(0)
-  api.nvim_win_set_cursor(win, {4, 0}) -- set cursor on first list entry
+  api.nvim_win_set_cursor(win, {3, 0}) -- set cursor on first list entry
 end
 
 return {
